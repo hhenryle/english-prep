@@ -8,7 +8,7 @@ English learning app, starting with TOEIC (IELTS later). Runs on desktop web, iO
 
 | Part | Technology |
 |---|---|
-| Backend | Java 21, Spring Boot, Gradle (Kotlin DSL), PostgreSQL, Flyway |
+| Backend | Java 21, Spring Boot, Maven, PostgreSQL, Flyway |
 | Client | Expo (React Native), TypeScript |
 | Infrastructure | Docker Compose (development) |
 

@@ -1,0 +1,2 @@
+-- Baseline: the schema starts empty. Real tables arrive in later migrations (V2, V3, ...).
+-- Never edit a migration that has already run; add a new file instead.

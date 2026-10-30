@@ -15,11 +15,10 @@
 *.pem
 *.key
 
-# ---- Java / Gradle (apps/api) ----
-.gradle/
-build/
+# ---- Java / Maven (apps/api) ----
+target/
 out/
-!gradle/wrapper/gradle-wrapper.jar
+.mvn/wrapper/maven-wrapper.jar
 *.class
 *.log
 hs_err_pid*
