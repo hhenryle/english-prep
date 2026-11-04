@@ -1,69 +1,38 @@
 package com.englishprep.api.identity.infrastructure;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
-import java.time.Instant;
-import java.util.UUID;
 
+/** Table "app_user": the extra columns of a person whose person_type is USER. */
 @Entity
 @Table(name = "app_user")
-class UserEntity {
-
-    @Id
-    private UUID id;
-
-    @Column(nullable = false)
-    private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
+@DiscriminatorValue("USER")
+@PrimaryKeyJoinColumn(name = "person_id")
+class UserEntity extends PersonEntity {
 
     @Column(name = "time_zone", nullable = false)
     private String timeZone;
-
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
 
     protected UserEntity() {
         // required by JPA
     }
 
-    UserEntity(UUID id, String email, String passwordHash, String timeZone,
-               Instant createdAt, Instant updatedAt) {
-        this.id = id;
-        this.email = email;
-        this.passwordHash = passwordHash;
+    UserEntity(String firstName, String lastName, String userName, String email,
+               String passwordHash, String timeZone) {
+        super(firstName, lastName, userName, email, passwordHash);
         this.timeZone = timeZone;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
     }
 
-    UUID getId() {
-        return id;
-    }
-
-    String getEmail() {
-        return email;
-    }
-
-    String getPasswordHash() {
-        return passwordHash;
+    void update(String firstName, String lastName, String userName, String email,
+                String passwordHash, String timeZone) {
+        super.update(firstName, lastName, userName, email, passwordHash);
+        this.timeZone = timeZone;
     }
 
     String getTimeZone() {
         return timeZone;
-    }
-
-    Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    Instant getUpdatedAt() {
-        return updatedAt;
     }
 }
