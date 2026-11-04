@@ -3,7 +3,6 @@ package com.englishprep.api.identity.infrastructure;
 import com.englishprep.api.identity.domain.User;
 import com.englishprep.api.identity.domain.UserRepository;
 import java.util.Optional;
-import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -17,11 +16,22 @@ class JpaUserRepository implements UserRepository {
 
     @Override
     public User save(User user) {
-        return toDomain(jpa.save(toEntity(user)));
+        UserEntity entity;
+        if (user.id() == null) {
+            entity = new UserEntity(user.firstName(), user.lastName(), user.userName(), user.email(),
+                    user.passwordHash(), user.timeZone());
+        } else {
+            // Load the existing row and change it, so the audit columns (created_at...) are kept.
+            entity = jpa.findById(user.id())
+                    .orElseThrow(() -> new IllegalStateException("User not found: " + user.id()));
+            entity.update(user.firstName(), user.lastName(), user.userName(), user.email(),
+                    user.passwordHash(), user.timeZone());
+        }
+        return toDomain(jpa.save(entity));
     }
 
     @Override
-    public Optional<User> findById(UUID id) {
+    public Optional<User> findById(Long id) {
         return jpa.findById(id).map(JpaUserRepository::toDomain);
     }
 
@@ -31,17 +41,22 @@ class JpaUserRepository implements UserRepository {
     }
 
     @Override
+    public Optional<User> findByUserName(String userName) {
+        return jpa.findByUserNameIgnoreCase(userName).map(JpaUserRepository::toDomain);
+    }
+
+    @Override
     public boolean existsByEmail(String email) {
         return jpa.existsByEmailIgnoreCase(email);
     }
 
-    private static UserEntity toEntity(User user) {
-        return new UserEntity(user.id(), user.email(), user.passwordHash(), user.timeZone(),
-                user.createdAt(), user.updatedAt());
+    @Override
+    public boolean existsByUserName(String userName) {
+        return jpa.existsByUserNameIgnoreCase(userName);
     }
 
-    private static User toDomain(UserEntity entity) {
-        return new User(entity.getId(), entity.getEmail(), entity.getPasswordHash(),
-                entity.getTimeZone(), entity.getCreatedAt(), entity.getUpdatedAt());
+    private static User toDomain(UserEntity e) {
+        return new User(e.getId(), e.getFirstName(), e.getLastName(), e.getUserName(), e.getEmail(),
+                e.getPasswordHash(), e.getTimeZone(), e.getCreatedAt(), e.getUpdatedAt());
     }
 }
