@@ -1,7 +1,7 @@
 package com.englishprep.api.identity.application;
 
-/** Input of {@link RegisterUserUseCase}. {@code timeZone} may be null, then UTC is used. */
-public record RegisterUserCommand(
+/** Input of {@link RegisterMemberUseCase}. {@code timeZone} may be null, then UTC is used. */
+public record RegisterMemberCommand(
         String firstName,
         String lastName,
         String userName,
@@ -12,6 +12,6 @@ public record RegisterUserCommand(
     /** Keeps the raw password out of logs and error messages. */
     @Override
     public String toString() {
-        return "RegisterUserCommand[userName=" + userName + ", email=" + email + ", password=***]";
+        return "RegisterMemberCommand[userName=" + userName + ", email=" + email + ", password=***]";
     }
 }

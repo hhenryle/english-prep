@@ -1,7 +1,7 @@
 package com.englishprep.api.identity.api;
 
-import com.englishprep.api.identity.application.RegisterUserCommand;
-import com.englishprep.api.identity.application.RegisterUserUseCase;
+import com.englishprep.api.identity.application.RegisterMemberCommand;
+import com.englishprep.api.identity.application.RegisterMemberUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -17,19 +17,19 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Auth")
 class AuthController {
 
-    private final RegisterUserUseCase registerUser;
+    private final RegisterMemberUseCase registerMember;
 
-    AuthController(RegisterUserUseCase registerUser) {
-        this.registerUser = registerUser;
+    AuthController(RegisterMemberUseCase registerMember) {
+        this.registerMember = registerMember;
     }
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create an account",
-            description = "Creates a user account. It does not log the user in; use the login endpoint for that.")
+            description = "Creates a member account. It does not log the member in; use the login endpoint for that.")
     RegisterResponse register(@Valid @RequestBody RegisterRequest request) {
-        var user = registerUser.register(new RegisterUserCommand(request.firstName(), request.lastName(),
+        var member = registerMember.register(new RegisterMemberCommand(request.firstName(), request.lastName(),
                 request.userName(), request.email(), request.password(), request.timeZone()));
-        return RegisterResponse.from(user);
+        return RegisterResponse.from(member);
     }
 }

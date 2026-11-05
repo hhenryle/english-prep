@@ -1,6 +1,6 @@
 package com.englishprep.api.identity.api;
 
-import com.englishprep.api.identity.domain.User;
+import com.englishprep.api.identity.domain.Member;
 import java.time.Instant;
 
 /** The created account. Never contains the password or its hash. */
@@ -13,8 +13,8 @@ public record RegisterResponse(
         String timeZone,
         Instant createdAt) {
 
-    static RegisterResponse from(User user) {
-        return new RegisterResponse(user.id(), user.firstName(), user.lastName(), user.userName(),
-                user.email(), user.timeZone(), user.createdAt());
+    static RegisterResponse from(Member member) {
+        return new RegisterResponse(member.id(), member.firstName(), member.lastName(), member.userName(),
+                member.email(), member.timeZone(), member.createdAt());
     }
 }

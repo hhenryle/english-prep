@@ -1,44 +1,44 @@
 package com.englishprep.api.identity.application;
 
 import com.englishprep.api.identity.domain.Person;
-import com.englishprep.api.identity.domain.User;
-import com.englishprep.api.identity.domain.UserRepository;
+import com.englishprep.api.identity.domain.Member;
+import com.englishprep.api.identity.domain.MemberRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Creates a new account. The steps: normalize email and user name, refuse if either is already
- * taken, hash the password, build the User, save it. Everything runs in one transaction.
+ * taken, hash the password, build the Member, save it. Everything runs in one transaction.
  */
 @Service
-public class RegisterUserUseCase {
+public class RegisterMemberUseCase {
 
     static final String DEFAULT_TIME_ZONE = "UTC";
 
-    private final UserRepository users;
+    private final MemberRepository members;
     private final PasswordHasher passwordHasher;
 
-    public RegisterUserUseCase(UserRepository users, PasswordHasher passwordHasher) {
-        this.users = users;
+    public RegisterMemberUseCase(MemberRepository members, PasswordHasher passwordHasher) {
+        this.members = members;
         this.passwordHasher = passwordHasher;
     }
 
     @Transactional
-    public User register(RegisterUserCommand command) {
+    public Member register(RegisterMemberCommand command) {
         String email = Person.normalizeLogin(command.email(), "email");
         String userName = Person.normalizeLogin(command.userName(), "userName");
 
-        if (users.existsByEmail(email)) {
+        if (members.existsByEmail(email)) {
             throw new EmailAlreadyUsedException();
         }
-        if (users.existsByUserName(userName)) {
+        if (members.existsByUserName(userName)) {
             throw new UserNameAlreadyUsedException();
         }
 
         String timeZone = isBlank(command.timeZone()) ? DEFAULT_TIME_ZONE : command.timeZone();
-        User user = User.register(command.firstName(), command.lastName(), userName, email,
+        Member member = Member.register(command.firstName(), command.lastName(), userName, email,
                 passwordHasher.hash(command.password()), timeZone);
-        return users.save(user);
+        return members.save(member);
     }
 
     private static boolean isBlank(String value) {

@@ -65,11 +65,11 @@ class AuthControllerRegisterTest {
         register(body("alice", "alice@example.com", "secret123", null)).andExpect(status().isCreated());
 
         Map<String, Object> row = jdbc.queryForMap(
-                "select p.password_hash, p.person_type, p.created_by, p.exclusion_cd, u.time_zone "
-                        + "from person p join app_user u on u.person_id = p.person_id where p.user_nm = 'alice'");
+                "select p.password_hash, p.person_type, p.created_by, p.exclusion_cd, m.time_zone "
+                        + "from person p join member m on m.member_id = p.person_id where p.user_nm = 'alice'");
 
         assertThat((String) row.get("password_hash")).startsWith("$2").doesNotContain("secret123");
-        assertThat(row.get("person_type")).isEqualTo("USER");
+        assertThat(row.get("person_type")).isEqualTo("MEMBER");
         assertThat(((Number) row.get("created_by")).longValue()).isZero();
         assertThat(row.get("exclusion_cd")).isEqualTo("IN");
         assertThat(row.get("time_zone")).isEqualTo("UTC");
