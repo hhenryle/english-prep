@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Locale;
 
 /**
- * What every kind of person has in common. A {@link User} is one kind; other kinds
+ * What every kind of person has in common. A {@link Member} is one kind; other kinds
  * (for example an admin) can extend this class later.
  * {@code id}, {@code createdAt} and {@code updatedAt} are null until the person is saved.
  */

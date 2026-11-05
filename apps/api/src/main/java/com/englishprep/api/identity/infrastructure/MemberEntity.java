@@ -6,21 +6,21 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 
-/** Table "app_user": the extra columns of a person whose person_type is USER. */
+/** Table "member": the extra columns of a person whose person_type is MEMBER. */
 @Entity
-@Table(name = "app_user")
-@DiscriminatorValue("USER")
-@PrimaryKeyJoinColumn(name = "person_id")
-class UserEntity extends PersonEntity {
+@Table(name = "member")
+@DiscriminatorValue("MEMBER")
+@PrimaryKeyJoinColumn(name = "member_id")
+class MemberEntity extends PersonEntity {
 
     @Column(name = "time_zone", nullable = false)
     private String timeZone;
 
-    protected UserEntity() {
+    protected MemberEntity() {
         // required by JPA
     }
 
-    UserEntity(String firstName, String lastName, String userName, String email,
+    MemberEntity(String firstName, String lastName, String userName, String email,
                String passwordHash, String timeZone) {
         super(firstName, lastName, userName, email, passwordHash);
         this.timeZone = timeZone;
