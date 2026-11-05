@@ -43,6 +43,11 @@
 		</dependency>
 
 		<dependency>
+			<!-- Only BCrypt for hashing passwords. The full Spring Security starter comes in step 2.5. -->
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-crypto</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>3.2.0</version>

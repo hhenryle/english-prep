@@ -47,4 +47,10 @@ class UserTest {
         assertThatThrownBy(() -> User.register("A", "N", "u", "a@x.com", "h", null))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("timeZone");
     }
+
+    @Test
+    void registerRejectsUnknownTimeZone() {
+        assertThatThrownBy(() -> User.register("A", "N", "u", "a@x.com", "h", "Mars/Olympus"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("timeZone");
+    }
 }
