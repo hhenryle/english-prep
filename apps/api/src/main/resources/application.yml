@@ -1,6 +1,10 @@
 spring:
   application:
     name: api
+  config:
+    # Local secrets live in apps/api/.env.local (KEY=value lines, git-ignored). Optional: elsewhere the
+    # same values come from real environment variables.
+    import: optional:file:.env.local[.properties]
   datasource:
     # Defaults match infra/.env.local (local development only). Override with env vars elsewhere.
     url: ${DB_URL:jdbc:postgresql://localhost:5432/englishprep}
@@ -16,3 +20,12 @@ management:
     web:
       exposure:
         include: health,info
+
+app:
+  jwt:
+    # No real default on purpose: the repository is public. Set JWT_SECRET (at least 32 bytes).
+    # The empty default only makes a missing variable give a clear error (see JwtProperties).
+    secret: ${JWT_SECRET:}
+    issuer: english-prep
+    access-token-ttl: 15m
+    refresh-token-ttl: 7d
