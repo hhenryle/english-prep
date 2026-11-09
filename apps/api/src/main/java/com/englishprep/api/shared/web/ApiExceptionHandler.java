@@ -1,6 +1,7 @@
 package com.englishprep.api.shared.web;
 
 import com.englishprep.api.identity.application.EmailAlreadyUsedException;
+import com.englishprep.api.identity.application.InvalidCredentialsException;
 import com.englishprep.api.identity.application.UserNameAlreadyUsedException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -50,6 +51,14 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     ProblemDetail handleIntegrityViolation(DataIntegrityViolationException ex) {
         return conflict("Email or user name is already registered");
+    }
+
+    /** 401 for a failed login. The message is the same for every reason, so it reveals nothing about accounts. */
+    @ExceptionHandler(InvalidCredentialsException.class)
+    ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problem.setTitle("Unauthorized");
+        return problem;
     }
 
     private static ProblemDetail conflict(String detail) {
