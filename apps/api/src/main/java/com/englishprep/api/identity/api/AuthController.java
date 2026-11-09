@@ -1,10 +1,14 @@
 package com.englishprep.api.identity.api;
 
-import com.englishprep.api.identity.application.IssueSessionUseCase;
-import com.englishprep.api.identity.application.LoginCommand;
-import com.englishprep.api.identity.application.LoginWithPasswordUseCase;
-import com.englishprep.api.identity.application.RegisterMemberCommand;
-import com.englishprep.api.identity.application.RegisterMemberUseCase;
+import com.englishprep.api.identity.api.login.LoginRequest;
+import com.englishprep.api.identity.api.login.LoginResponse;
+import com.englishprep.api.identity.api.register.RegisterRequest;
+import com.englishprep.api.identity.api.register.RegisterResponse;
+import com.englishprep.api.identity.application.login.IssueSessionUseCase;
+import com.englishprep.api.identity.application.login.LoginCommand;
+import com.englishprep.api.identity.application.login.LoginWithPasswordUseCase;
+import com.englishprep.api.identity.application.register.RegisterMemberCommand;
+import com.englishprep.api.identity.application.register.RegisterMemberUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

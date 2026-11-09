@@ -1,8 +1,8 @@
 package com.englishprep.api.shared.web;
 
-import com.englishprep.api.identity.application.EmailAlreadyUsedException;
-import com.englishprep.api.identity.application.InvalidCredentialsException;
-import com.englishprep.api.identity.application.UserNameAlreadyUsedException;
+import com.englishprep.api.identity.application.login.InvalidCredentialsException;
+import com.englishprep.api.identity.application.register.EmailAlreadyUsedException;
+import com.englishprep.api.identity.application.register.UserNameAlreadyUsedException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
