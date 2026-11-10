@@ -1,5 +1,6 @@
 package com.englishprep.api.shared.security;
 
+import jakarta.servlet.Filter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,10 +10,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 /**
- * Web security rules: who may call what. Anonymous callers get a 401 on every protected path.
+ * Web security rules: who may call what. A valid bearer token (see BearerTokenFilter) identifies the caller; anonymous callers get a 401 on every protected path.
  */
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
@@ -27,7 +29,8 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
-            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) throws Exception {
+            @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver,
+            @Qualifier("bearerTokenFilter") Filter bearerTokenFilter) throws Exception {
         http
                 // CSRF protects cookie-based sessions. We use a bearer token in a header, not cookies.
                 .csrf(AbstractHttpConfigurer::disable)
@@ -37,6 +40,9 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
+                // Reads the bearer token and, when it is valid, records who the caller is. It runs before the
+                // access rules below are checked.
+                .addFilterBefore(bearerTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_ENDPOINTS).permitAll()
                         .requestMatchers(API_DOCS).permitAll()
