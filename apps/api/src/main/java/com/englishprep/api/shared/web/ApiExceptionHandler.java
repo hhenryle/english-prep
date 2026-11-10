@@ -1,6 +1,7 @@
 package com.englishprep.api.shared.web;
 
 import com.englishprep.api.identity.application.login.InvalidCredentialsException;
+import com.englishprep.api.identity.application.me.CurrentMemberNotFoundException;
 import com.englishprep.api.identity.application.register.EmailAlreadyUsedException;
 import com.englishprep.api.identity.application.register.UserNameAlreadyUsedException;
 import java.util.LinkedHashMap;
@@ -64,10 +65,11 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * 401 for a protected path called without a valid token. One message for every reason (no token,
-     * bad token, expired token), and the header tells the client that a Bearer token is expected.
+     * bad token, expired token, member no longer exists), and the header tells the client that a Bearer
+     * token is expected.
      */
-    @ExceptionHandler(AuthenticationException.class)
-    ResponseEntity<ProblemDetail> handleAuthentication(AuthenticationException ex) {
+    @ExceptionHandler({AuthenticationException.class, CurrentMemberNotFoundException.class})
+    ResponseEntity<ProblemDetail> handleAuthentication(RuntimeException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Authentication is required");
         problem.setTitle("Unauthorized");
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
