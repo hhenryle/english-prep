@@ -2,8 +2,8 @@ package com.englishprep.api.identity.api.security;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.englishprep.api.TestcontainersConfiguration;
@@ -32,7 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The whole flow through the real stack: register, log in, call a protected endpoint with the access
- * token that the login returned, and call it with tokens that must be refused.
+ * token that the login returned, and call it with tokens that must be refused. GET /api/me is the
+ * protected endpoint used here.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,7 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class BearerAuthenticationTest {
 
-    private static final String PROTECTED = "/api/test/whoami";
+    private static final String PROTECTED = "/api/me";
 
     @Autowired
     private MockMvc mvc;
@@ -79,16 +80,17 @@ class BearerAuthenticationTest {
 
         mvc.perform(get(PROTECTED).header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(content().string(Long.toString(memberId)));
+                .andExpect(jsonPath("$.id").value(memberId));
     }
 
     @Test
-    void aTokenIssuedDirectlyAlsoWorks() throws Exception {
-        String token = accessTokens.issue(42L).value();
+    void aTokenIssuedDirectlyForARegisteredMemberAlsoWorks() throws Exception {
+        long memberId = ((Number) JsonPath.read(loginAsAlice(), "$.member.id")).longValue();
+        String token = accessTokens.issue(memberId).value();
 
         mvc.perform(get(PROTECTED).header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(content().string("42"));
+                .andExpect(jsonPath("$.id").value(memberId));
     }
 
     @Test
