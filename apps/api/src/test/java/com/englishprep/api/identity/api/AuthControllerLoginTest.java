@@ -7,9 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.englishprep.api.TestcontainersConfiguration;
-import com.englishprep.api.identity.application.AccessTokenService;
-import com.englishprep.api.identity.application.RefreshTokenService;
-import com.englishprep.api.identity.domain.RefreshToken;
+import com.englishprep.api.identity.application.token.AccessTokenService;
+import com.englishprep.api.identity.application.token.RefreshTokenService;
+import com.englishprep.api.identity.domain.token.RefreshToken;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
