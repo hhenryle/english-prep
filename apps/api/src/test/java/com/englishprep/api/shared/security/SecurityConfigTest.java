@@ -3,6 +3,9 @@ package com.englishprep.api.shared.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.englishprep.api.TestcontainersConfiguration;
@@ -54,6 +57,18 @@ class SecurityConfigTest {
     void anyOtherPathNeedsAuthentication() throws Exception {
         mvc.perform(get("/api/anything")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/me")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void the401HasAProblemDetailBodyAndAskForABearerToken() throws Exception {
+        mvc.perform(get("/api/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().string("WWW-Authenticate", "Bearer"))
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.detail").value("Authentication is required"))
+                .andExpect(jsonPath("$.instance").value("/api/me"));
     }
 
     @Test
