@@ -1,0 +1,51 @@
+package com.englishprep.api.shared.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+
+/**
+ * Web security rules: who may call what. Step 2.5a only sets the rules; the filter that reads the
+ * bearer token and decides who the caller is comes in 2.5b, so for now every protected path
+ * answers 401.
+ */
+@Configuration(proxyBeanMethods = false)
+@EnableWebSecurity
+public class SecurityConfig {
+
+    /** POST endpoints anyone may call, because the caller has no token yet. */
+    private static final String[] PUBLIC_AUTH_ENDPOINTS = {
+            "/api/auth/register", "/api/auth/login", "/api/auth/refresh"};
+
+    /** API documentation, used while developing. Disable it in production (see springdoc.* properties). */
+    private static final String[] API_DOCS = {"/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"};
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                // CSRF protects cookie-based sessions. We use a bearer token in a header, not cookies.
+                .csrf(AbstractHttpConfigurer::disable)
+                // No server-side session: every request must carry its own token.
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Spring Security's default login page, Basic prompt and logout page are not used by an API.
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(requests -> requests
+                        .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_ENDPOINTS).permitAll()
+                        .requestMatchers(API_DOCS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
+                        .anyRequest().authenticated())
+                // Without this, an anonymous call to a protected path would answer 403 instead of 401.
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
+        return http.build();
+    }
+}
