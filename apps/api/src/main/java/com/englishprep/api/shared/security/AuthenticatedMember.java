@@ -1,4 +1,4 @@
-package com.englishprep.api.identity.api.security;
+package com.englishprep.api.shared.security;
 
 /**
  * Who is calling: the member whose access token was accepted. It only holds the id, taken from the

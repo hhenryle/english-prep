@@ -1,7 +1,7 @@
 package com.englishprep.api.identity.api.me;
 
-import com.englishprep.api.identity.api.security.AuthenticatedMember;
 import com.englishprep.api.identity.application.me.GetCurrentMemberUseCase;
+import com.englishprep.api.shared.security.AuthenticatedMember;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.CacheControl;

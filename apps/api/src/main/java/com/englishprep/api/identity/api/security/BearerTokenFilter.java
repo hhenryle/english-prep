@@ -1,6 +1,7 @@
 package com.englishprep.api.identity.api.security;
 
 import com.englishprep.api.identity.application.token.AccessTokenService;
+import com.englishprep.api.shared.security.AuthenticatedMember;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
