@@ -2,6 +2,8 @@ package com.englishprep.api.identity.infrastructure.token;
 
 import com.englishprep.api.identity.domain.token.RefreshToken;
 import com.englishprep.api.identity.domain.token.RefreshTokenRepository;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
@@ -31,6 +33,31 @@ public class JpaRefreshTokenRepository implements RefreshTokenRepository {
     @Override
     public Optional<RefreshToken> findByTokenHash(String tokenHash) {
         return jpa.findByTokenHash(tokenHash).map(JpaRefreshTokenRepository::toDomain);
+    }
+
+    /**
+     * Locks the row first, so two requests with the same token cannot both see it as active. The change
+     * is flushed here (not at commit) so that the audit columns are filled while the caller is known.
+     */
+    @Override
+    public boolean revokeIfActive(String tokenHash, Instant now) {
+        return jpa.findByTokenHashForUpdate(tokenHash)
+                .filter(entity -> entity.getRevokedAt() == null && !now.isAfter(entity.getExpiresAt()))
+                .map(entity -> {
+                    entity.updateRevokedAt(now);
+                    jpa.saveAndFlush(entity);
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    /** Loads the tokens and changes them one by one (not a bulk SQL update) so the audit columns are kept up to date. */
+    @Override
+    public int revokeAllOfMember(long memberId, Instant now) {
+        List<RefreshTokenEntity> open = jpa.findByMemberIdAndRevokedAtIsNull(memberId);
+        open.forEach(entity -> entity.updateRevokedAt(now));
+        jpa.saveAllAndFlush(open);
+        return open.size();
     }
 
     private static RefreshToken toDomain(RefreshTokenEntity e) {

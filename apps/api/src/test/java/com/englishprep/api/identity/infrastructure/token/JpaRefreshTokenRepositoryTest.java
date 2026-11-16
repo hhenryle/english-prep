@@ -8,15 +8,20 @@ import com.englishprep.api.identity.domain.member.Member;
 import com.englishprep.api.identity.domain.token.RefreshToken;
 import com.englishprep.api.identity.infrastructure.member.JpaMemberRepository;
 import com.englishprep.api.shared.persistence.JpaAuditingConfig;
+import com.englishprep.api.shared.security.AuthenticatedMember;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -133,5 +138,104 @@ class JpaRefreshTokenRepositoryTest {
         flushAndClear();
 
         assertThat(repository.findByTokenHash(HASH)).isEmpty();
+    }
+
+    // --- revokeIfActive / revokeAllOfMember ---
+
+    @AfterEach
+    void clearCaller() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private long otherMemberId() {
+        return members.save(Member.register("Bob", "Tran", "bob", "bob@example.com", "hash", "UTC")).id();
+    }
+
+    private String hashOf(char c) {
+        return String.valueOf(c).repeat(64);
+    }
+
+    @Test
+    void revokeIfActiveRevokesOnceAndThenReportsFalse() {
+        repository.save(RefreshToken.issue(newMemberId(), HASH, inOneWeek()));
+        flushAndClear();
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
+
+        assertThat(repository.revokeIfActive(HASH, now)).isTrue();
+        assertThat(repository.revokeIfActive(HASH, now.plusSeconds(1))).isFalse();
+
+        flushAndClear();
+        assertThat(repository.findByTokenHash(HASH).orElseThrow().revokedAt()).isEqualTo(now);
+    }
+
+    @Test
+    void revokeIfActiveIsFalseForAnUnknownHash() {
+        assertThat(repository.revokeIfActive(hashOf('f'), Instant.now())).isFalse();
+    }
+
+    @Test
+    void revokeIfActiveIsFalseForAnExpiredTokenAndLeavesItAlone() {
+        Instant expiresAt = Instant.now().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MICROS);
+        repository.save(RefreshToken.issue(newMemberId(), HASH, expiresAt));
+        flushAndClear();
+
+        assertThat(repository.revokeIfActive(HASH, Instant.now())).isFalse();
+
+        flushAndClear();
+        assertThat(repository.findByTokenHash(HASH).orElseThrow().revokedAt()).isNull();
+    }
+
+    @Test
+    void revokeIfActiveStillWorksAtTheExactMomentOfExpiry() {
+        Instant expiresAt = inOneWeek();
+        repository.save(RefreshToken.issue(newMemberId(), HASH, expiresAt));
+        flushAndClear();
+
+        assertThat(repository.revokeIfActive(HASH, expiresAt)).isTrue();
+    }
+
+    @Test
+    void revokeAllOfMemberRevokesOnlyThatMembersOpenTokens() {
+        long alice = newMemberId();
+        long bob = otherMemberId();
+        Instant earlier = Instant.now().minus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.MICROS);
+        repository.save(RefreshToken.issue(alice, hashOf('1'), inOneWeek()));
+        repository.save(RefreshToken.issue(alice, hashOf('2'), inOneWeek()));
+        repository.save(new RefreshToken(null, alice, hashOf('3'), inOneWeek(), earlier)); // already revoked
+        repository.save(RefreshToken.issue(bob, hashOf('4'), inOneWeek()));
+        flushAndClear();
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
+
+        int revoked = repository.revokeAllOfMember(alice, now);
+
+        flushAndClear();
+        assertThat(revoked).isEqualTo(2);
+        assertThat(repository.findByTokenHash(hashOf('1')).orElseThrow().revokedAt()).isEqualTo(now);
+        assertThat(repository.findByTokenHash(hashOf('2')).orElseThrow().revokedAt()).isEqualTo(now);
+        assertThat(repository.findByTokenHash(hashOf('3')).orElseThrow().revokedAt()).isEqualTo(earlier);
+        assertThat(repository.findByTokenHash(hashOf('4')).orElseThrow().revokedAt()).isNull();
+    }
+
+    @Test
+    void revokeAllOfMemberReturnsZeroWhenThereIsNothingToRevoke() {
+        assertThat(repository.revokeAllOfMember(newMemberId(), Instant.now())).isZero();
+    }
+
+    @Test
+    void revokingRecordsTheCallerInUpdatedBy() {
+        long memberId = newMemberId();
+        RefreshToken token = repository.save(RefreshToken.issue(memberId, HASH, inOneWeek()));
+        flushAndClear();
+        SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken
+                .authenticated(new AuthenticatedMember(memberId), null, List.of()));
+
+        repository.revokeIfActive(HASH, Instant.now());
+
+        flushAndClear();
+        Object[] row = (Object[]) em.createNativeQuery(
+                        "select created_by, updated_by from refresh_token where refresh_token_id = ?1")
+                .setParameter(1, token.id()).getSingleResult();
+        assertThat(((Number) row[0]).longValue()).isZero();
+        assertThat(((Number) row[1]).longValue()).isEqualTo(memberId);
     }
 }

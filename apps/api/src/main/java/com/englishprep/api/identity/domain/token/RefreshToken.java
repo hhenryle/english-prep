@@ -33,9 +33,18 @@ public class RefreshToken {
         return new RefreshToken(null, memberId, tokenHash, expiresAt, null);
     }
 
-    /** Usable when it is not revoked and {@code now} is not after the expiry time. */
+    public boolean isRevoked() {
+        return revokedAt != null;
+    }
+
+    /** Expired once {@code now} is after the expiry time; at exactly that moment it is still valid. */
+    public boolean isExpired(Instant now) {
+        return now.isAfter(expiresAt);
+    }
+
+    /** Usable when it is not revoked and not expired. */
     public boolean isActive(Instant now) {
-        return revokedAt == null && !now.isAfter(expiresAt);
+        return !isRevoked() && !isExpired(now);
     }
 
     public Long id() {
