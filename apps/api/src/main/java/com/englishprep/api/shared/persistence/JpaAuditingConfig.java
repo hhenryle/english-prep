@@ -1,6 +1,5 @@
 package com.englishprep.api.shared.persistence;
 
-import java.util.Optional;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
@@ -18,11 +17,11 @@ public class JpaAuditingConfig {
     public static final long SYSTEM_USER_ID = 0L;
 
     /**
-     * Who is making the change. Always the system for now; once login exists (step 2.5)
-     * this will return the id of the authenticated person.
+     * Who is making the change: the logged-in member of the current request, or the system when there
+     * is none (register and login are anonymous, so their rows are recorded as the system).
      */
     @Bean
     AuditorAware<Long> auditorAware() {
-        return () -> Optional.of(SYSTEM_USER_ID);
+        return new CurrentAuditor();
     }
 }

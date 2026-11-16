@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.englishprep.api.identity.application.token.AccessToken;
 import com.englishprep.api.identity.application.token.AccessTokenService;
+import com.englishprep.api.shared.security.AuthenticatedMember;
 import jakarta.servlet.FilterChain;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
