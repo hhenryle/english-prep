@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 @Repository
-class JpaRefreshTokenRepository implements RefreshTokenRepository {
+public class JpaRefreshTokenRepository implements RefreshTokenRepository {
 
     private final SpringDataRefreshTokenRepository jpa;
 
