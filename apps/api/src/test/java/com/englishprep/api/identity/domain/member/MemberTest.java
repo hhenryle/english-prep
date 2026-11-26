@@ -53,4 +53,25 @@ class MemberTest {
         assertThatThrownBy(() -> Member.register("A", "N", "u", "a@x.com", "h", "Mars/Olympus"))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("timeZone");
     }
+
+    @Test
+    void withPasswordHashChangesOnlyThePasswordAndKeepsTheOriginalUntouched() {
+        Member original = new Member(5L, "Alice", "Nguyen", "alice01", "alice@example.com", "old", "UTC",
+                java.time.Instant.EPOCH, java.time.Instant.EPOCH);
+
+        Member changed = original.withPasswordHash("new");
+
+        assertThat(changed.passwordHash()).isEqualTo("new");
+        assertThat(changed.id()).isEqualTo(5L);
+        assertThat(changed.userName()).isEqualTo("alice01");
+        assertThat(changed.timeZone()).isEqualTo("UTC");
+        assertThat(changed.createdAt()).isEqualTo(java.time.Instant.EPOCH);
+        assertThat(original.passwordHash()).isEqualTo("old");
+    }
+
+    @Test
+    void withPasswordHashRejectsABlankHash() {
+        assertThatThrownBy(() -> newMember().withPasswordHash(" "))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("passwordHash");
+    }
 }

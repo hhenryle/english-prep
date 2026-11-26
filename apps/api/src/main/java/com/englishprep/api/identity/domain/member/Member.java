@@ -24,6 +24,12 @@ public final class Member extends Person {
                 passwordHash, timeZone, null, null);
     }
 
+    /** A copy with a new password hash. A member never changes in place. */
+    public Member withPasswordHash(String newPasswordHash) {
+        return new Member(id(), firstName(), lastName(), userName(), email(), newPasswordHash, timeZone,
+                createdAt(), updatedAt());
+    }
+
     public String timeZone() {
         return timeZone;
     }

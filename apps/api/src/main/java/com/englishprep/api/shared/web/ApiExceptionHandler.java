@@ -2,6 +2,7 @@ package com.englishprep.api.shared.web;
 
 import com.englishprep.api.identity.application.login.InvalidCredentialsException;
 import com.englishprep.api.identity.application.me.CurrentMemberNotFoundException;
+import com.englishprep.api.identity.application.password.PasswordNotChangedException;
 import com.englishprep.api.identity.application.refresh.InvalidRefreshTokenException;
 import com.englishprep.api.identity.application.register.EmailAlreadyUsedException;
 import com.englishprep.api.identity.application.register.UserNameAlreadyUsedException;
@@ -61,6 +62,14 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         problem.setTitle("Unauthorized");
+        return problem;
+    }
+
+    /** 400 when the new password equals the current one. */
+    @ExceptionHandler(PasswordNotChangedException.class)
+    ProblemDetail handlePasswordNotChanged(PasswordNotChangedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Invalid request");
         return problem;
     }
 
