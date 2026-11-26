@@ -8,12 +8,16 @@ import com.englishprep.api.identity.application.register.EmailAlreadyUsedExcepti
 import com.englishprep.api.identity.application.register.UserNameAlreadyUsedException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -28,6 +32,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  */
 @RestControllerAdvice
 class ApiExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     /** 400 with the list of invalid fields: {"errors": {"email": "must be a well-formed email address"}}. */
     @Override
@@ -93,6 +99,33 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
                 .body(problem);
+    }
+
+    /**
+     * 403: the caller is logged in but not allowed to do this. Nothing needs it yet; it is here so the
+     * format is already right when roles exist (it also covers AccessDeniedException thrown by method security).
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN,
+                "You are not allowed to do this");
+        problem.setTitle("Forbidden");
+        return problem;
+    }
+
+    /**
+     * 500 for anything not handled above. The client gets a generic message and a reference; the real
+     * exception goes only to the log, under the same reference, so it can be found when someone reports it.
+     */
+    @ExceptionHandler(Exception.class)
+    ProblemDetail handleUnexpected(Exception ex) {
+        String reference = UUID.randomUUID().toString();
+        log.error("Unexpected error, reference {}", reference, ex);
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred");
+        problem.setTitle("Internal Server Error");
+        problem.setProperty("reference", reference);
+        return problem;
     }
 
     private static ProblemDetail conflict(String detail) {
