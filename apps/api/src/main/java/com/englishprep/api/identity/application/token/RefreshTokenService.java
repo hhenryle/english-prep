@@ -45,13 +45,41 @@ public class RefreshTokenService {
         return new IssuedRefreshToken(value, expiresAt);
     }
 
-    /** Looks the raw value up by its hash. Empty when unknown, revoked or expired (or null/blank). */
+    /**
+     * Looks the raw value up by its hash and returns the token whatever its state (active, revoked or
+     * expired); empty when unknown or null/blank. The caller needs the state to tell "never valid" from
+     * "already used", which is a sign that the token was stolen.
+     */
     @Transactional(readOnly = true)
-    public Optional<RefreshToken> findActive(String value) {
+    public Optional<RefreshToken> find(String value) {
         if (value == null || value.isBlank()) {
             return Optional.empty();
         }
-        return tokens.findByTokenHash(hash(value)).filter(token -> token.isActive(clock.instant()));
+        return tokens.findByTokenHash(hash(value));
+    }
+
+    /** Like {@link #find}, but empty when the token is revoked or expired. */
+    @Transactional(readOnly = true)
+    public Optional<RefreshToken> findActive(String value) {
+        return find(value).filter(token -> token.isActive(clock.instant()));
+    }
+
+    /**
+     * Revokes the token if it is still active. True only for the request that actually revoked it, so a
+     * token used by several requests at once is accepted exactly once.
+     */
+    @Transactional
+    public boolean revoke(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        return tokens.revokeIfActive(hash(value), clock.instant());
+    }
+
+    /** Revokes every open token of the member (log out everywhere). Returns how many were revoked. */
+    @Transactional
+    public int revokeAllOf(long memberId) {
+        return tokens.revokeAllOfMember(memberId, clock.instant());
     }
 
     /** 32 bytes from a cryptographically strong generator, written as URL-safe text (43 characters). */

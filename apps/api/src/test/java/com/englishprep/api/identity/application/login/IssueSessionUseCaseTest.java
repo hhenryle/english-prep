@@ -35,6 +35,16 @@ class IssueSessionUseCaseTest {
         public Optional<RefreshToken> findByTokenHash(String tokenHash) {
             return stored.stream().filter(t -> t.tokenHash().equals(tokenHash)).findFirst();
         }
+
+        @Override
+        public boolean revokeIfActive(String tokenHash, Instant now) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int revokeAllOfMember(long memberId, Instant now) {
+            throw new UnsupportedOperationException();
+        }
     }, new JwtProperties("a".repeat(32), "english-prep", Duration.ofMinutes(15), Duration.ofDays(7)),
             Clock.fixed(NOW, ZoneOffset.UTC));
     private final AccessTokenService accessTokens = new AccessTokenService() {

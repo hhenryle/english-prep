@@ -103,6 +103,57 @@ class RefreshTokenServiceTest {
     }
 
     @Test
+    void findReturnsTheTokenEvenWhenItIsRevokedOrExpired() {
+        RefreshTokenService service = serviceAt(NOW);
+        String value = service.issue(3L).value();
+        service.revoke(value);
+
+        assertThat(service.find(value)).get().extracting(RefreshToken::isRevoked).isEqualTo(true);
+        assertThat(service.findActive(value)).isEmpty();
+        String other = service.issue(3L).value();
+        assertThat(serviceAt(NOW.plus(Duration.ofDays(8))).find(other)).isPresent();
+        assertThat(service.find(null)).isEmpty();
+        assertThat(service.find(" ")).isEmpty();
+        assertThat(service.find("unknown")).isEmpty();
+    }
+
+    @Test
+    void revokeWorksOnceAndThenTheTokenIsNoLongerActive() {
+        RefreshTokenService service = serviceAt(NOW);
+        String value = service.issue(3L).value();
+
+        assertThat(service.revoke(value)).isTrue();
+        assertThat(service.revoke(value)).isFalse();
+        assertThat(service.findActive(value)).isEmpty();
+        assertThat(repository.saved.get(0).revokedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void revokeIsFalseForUnknownExpiredNullAndBlank() {
+        RefreshTokenService service = serviceAt(NOW);
+        String value = service.issue(3L).value();
+
+        assertThat(service.revoke("unknown")).isFalse();
+        assertThat(service.revoke(null)).isFalse();
+        assertThat(service.revoke("  ")).isFalse();
+        assertThat(serviceAt(NOW.plus(Duration.ofDays(8))).revoke(value)).isFalse();
+    }
+
+    @Test
+    void revokeAllOfRevokesOnlyThatMembersOpenTokens() {
+        RefreshTokenService service = serviceAt(NOW);
+        String first = service.issue(3L).value();
+        String second = service.issue(3L).value();
+        String other = service.issue(4L).value();
+        service.revoke(first);
+
+        assertThat(service.revokeAllOf(3L)).isEqualTo(1);
+        assertThat(service.findActive(second)).isEmpty();
+        assertThat(service.findActive(other)).isPresent();
+        assertThat(service.revokeAllOf(3L)).isZero();
+    }
+
+    @Test
     void issuedTokenToStringDoesNotShowTheValue() {
         IssuedRefreshToken issued = serviceAt(NOW).issue(1L);
 
@@ -124,6 +175,33 @@ class RefreshTokenServiceTest {
         @Override
         public Optional<RefreshToken> findByTokenHash(String tokenHash) {
             return saved.stream().filter(t -> t.tokenHash().equals(tokenHash)).findFirst();
+        }
+
+        @Override
+        public boolean revokeIfActive(String tokenHash, Instant now) {
+            for (int i = 0; i < saved.size(); i++) {
+                RefreshToken token = saved.get(i);
+                if (token.tokenHash().equals(tokenHash) && token.isActive(now)) {
+                    saved.set(i, new RefreshToken(token.id(), token.memberId(), token.tokenHash(),
+                            token.expiresAt(), now));
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public int revokeAllOfMember(long memberId, Instant now) {
+            int revoked = 0;
+            for (int i = 0; i < saved.size(); i++) {
+                RefreshToken token = saved.get(i);
+                if (token.memberId() == memberId && !token.isRevoked()) {
+                    saved.set(i, new RefreshToken(token.id(), token.memberId(), token.tokenHash(),
+                            token.expiresAt(), now));
+                    revoked++;
+                }
+            }
+            return revoked;
         }
     }
 }

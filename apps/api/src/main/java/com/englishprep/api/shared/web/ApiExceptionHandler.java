@@ -2,6 +2,7 @@ package com.englishprep.api.shared.web;
 
 import com.englishprep.api.identity.application.login.InvalidCredentialsException;
 import com.englishprep.api.identity.application.me.CurrentMemberNotFoundException;
+import com.englishprep.api.identity.application.refresh.InvalidRefreshTokenException;
 import com.englishprep.api.identity.application.register.EmailAlreadyUsedException;
 import com.englishprep.api.identity.application.register.UserNameAlreadyUsedException;
 import java.util.LinkedHashMap;
@@ -58,6 +59,14 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     /** 401 for a failed login. The message is the same for every reason, so it reveals nothing about accounts. */
     @ExceptionHandler(InvalidCredentialsException.class)
     ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problem.setTitle("Unauthorized");
+        return problem;
+    }
+
+    /** 401 for a refresh token that cannot be used. Same message for every reason. */
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    ProblemDetail handleInvalidRefreshToken(InvalidRefreshTokenException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         problem.setTitle("Unauthorized");
         return problem;
