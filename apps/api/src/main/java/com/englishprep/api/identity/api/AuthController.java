@@ -2,21 +2,25 @@ package com.englishprep.api.identity.api;
 
 import com.englishprep.api.identity.api.login.LoginRequest;
 import com.englishprep.api.identity.api.login.LoginResponse;
+import com.englishprep.api.identity.api.logout.LogoutRequest;
 import com.englishprep.api.identity.api.refresh.RefreshRequest;
 import com.englishprep.api.identity.api.register.RegisterRequest;
 import com.englishprep.api.identity.api.register.RegisterResponse;
 import com.englishprep.api.identity.application.login.IssueSessionUseCase;
 import com.englishprep.api.identity.application.login.LoginCommand;
 import com.englishprep.api.identity.application.login.LoginWithPasswordUseCase;
+import com.englishprep.api.identity.application.logout.LogoutUseCase;
 import com.englishprep.api.identity.application.refresh.RefreshSessionUseCase;
 import com.englishprep.api.identity.application.register.RegisterMemberCommand;
 import com.englishprep.api.identity.application.register.RegisterMemberUseCase;
+import com.englishprep.api.shared.security.AuthenticatedMember;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,13 +36,16 @@ class AuthController {
     private final LoginWithPasswordUseCase loginWithPassword;
     private final IssueSessionUseCase issueSession;
     private final RefreshSessionUseCase refreshSession;
+    private final LogoutUseCase logoutUseCase;
 
     AuthController(RegisterMemberUseCase registerMember, LoginWithPasswordUseCase loginWithPassword,
-                   IssueSessionUseCase issueSession, RefreshSessionUseCase refreshSession) {
+                   IssueSessionUseCase issueSession, RefreshSessionUseCase refreshSession,
+                   LogoutUseCase logoutUseCase) {
         this.registerMember = registerMember;
         this.loginWithPassword = loginWithPassword;
         this.issueSession = issueSession;
         this.refreshSession = refreshSession;
+        this.logoutUseCase = logoutUseCase;
     }
 
     @PostMapping("/register")
@@ -70,5 +77,22 @@ class AuthController {
     ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshRequest request) {
         var result = refreshSession.refresh(request.refreshToken());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(LoginResponse.from(result));
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Log out",
+            description = "Ends one session by revoking its refresh token. Needs an access token. Always answers "
+                    + "204, also when the token is unknown or belongs to someone else (then nothing is revoked).")
+    void logout(@AuthenticationPrincipal AuthenticatedMember member, @Valid @RequestBody LogoutRequest request) {
+        logoutUseCase.logout(member.id(), request.refreshToken());
+    }
+
+    @PostMapping("/logout-all")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Log out everywhere",
+            description = "Revokes every refresh token of the caller. Needs an access token.")
+    void logoutAll(@AuthenticationPrincipal AuthenticatedMember member) {
+        logoutUseCase.logoutAll(member.id());
     }
 }
