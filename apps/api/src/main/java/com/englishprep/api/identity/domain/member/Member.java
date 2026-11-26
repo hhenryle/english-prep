@@ -16,12 +16,29 @@ public final class Member extends Person {
     /** A new member that has not been saved yet: no id and no timestamps, the database assigns them. */
     public static Member register(String firstName, String lastName, String userName, String email,
                                 String passwordHash, String timeZone) {
-        if (timeZone == null || !ZoneId.getAvailableZoneIds().contains(timeZone.strip())) {
-            throw new IllegalArgumentException("timeZone must be a valid time zone id");
-        }
+        requireValidTimeZone(timeZone);
         return new Member(null, firstName, lastName,
                 normalizeLogin(userName, "userName"), normalizeLogin(email, "email"),
                 passwordHash, timeZone, null, null);
+    }
+
+    /** A copy with a new password hash. A member never changes in place. */
+    public Member withPasswordHash(String newPasswordHash) {
+        return new Member(id(), firstName(), lastName(), userName(), email(), newPasswordHash, timeZone,
+                createdAt(), updatedAt());
+    }
+
+    /** A copy with another time zone, which must be a valid IANA id. */
+    public Member withTimeZone(String newTimeZone) {
+        requireValidTimeZone(newTimeZone);
+        return new Member(id(), firstName(), lastName(), userName(), email(), passwordHash(), newTimeZone,
+                createdAt(), updatedAt());
+    }
+
+    private static void requireValidTimeZone(String timeZone) {
+        if (timeZone == null || !ZoneId.getAvailableZoneIds().contains(timeZone.strip())) {
+            throw new IllegalArgumentException("timeZone must be a valid time zone id");
+        }
     }
 
     public String timeZone() {

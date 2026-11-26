@@ -1,13 +1,19 @@
 package com.englishprep.api.identity.api.me;
 
+import com.englishprep.api.identity.api.login.LoginResponse;
+import com.englishprep.api.identity.application.me.ChangeTimeZoneUseCase;
 import com.englishprep.api.identity.application.me.GetCurrentMemberUseCase;
+import com.englishprep.api.identity.application.password.ChangePasswordUseCase;
 import com.englishprep.api.shared.security.AuthenticatedMember;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,9 +23,14 @@ import org.springframework.web.bind.annotation.RestController;
 class MeController {
 
     private final GetCurrentMemberUseCase getCurrentMember;
+    private final ChangePasswordUseCase changePassword;
+    private final ChangeTimeZoneUseCase changeTimeZone;
 
-    MeController(GetCurrentMemberUseCase getCurrentMember) {
+    MeController(GetCurrentMemberUseCase getCurrentMember, ChangePasswordUseCase changePassword,
+            ChangeTimeZoneUseCase changeTimeZone) {
         this.getCurrentMember = getCurrentMember;
+        this.changePassword = changePassword;
+        this.changeTimeZone = changeTimeZone;
     }
 
     /**
@@ -33,5 +44,26 @@ class MeController {
         var current = getCurrentMember.get(member.id());
         // Personal data: no cache (browser, proxy) may keep it.
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(MeResponse.from(current));
+    }
+
+    @PutMapping("/password")
+    @Operation(summary = "Change password",
+            description = "Needs the current password. Every refresh token of the member is revoked, so other "
+                    + "devices must log in again. The response holds a new session (same format as login) for "
+                    + "the device that made the request.")
+    ResponseEntity<LoginResponse> changePassword(@AuthenticationPrincipal AuthenticatedMember member,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        var result = changePassword.change(member.id(), request.currentPassword(), request.newPassword());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(LoginResponse.from(result));
+    }
+
+    @PutMapping("/time-zone")
+    @Operation(summary = "Change time zone",
+            description = "Sets the IANA time zone of the caller, for example Asia/Ho_Chi_Minh. Sessions stay "
+                    + "valid. Returns the updated account.")
+    ResponseEntity<MeResponse> changeTimeZone(@AuthenticationPrincipal AuthenticatedMember member,
+            @Valid @RequestBody ChangeTimeZoneRequest request) {
+        var updated = changeTimeZone.change(member.id(), request.timeZone());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(MeResponse.from(updated));
     }
 }
