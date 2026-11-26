@@ -2,11 +2,13 @@ package com.englishprep.api.identity.api;
 
 import com.englishprep.api.identity.api.login.LoginRequest;
 import com.englishprep.api.identity.api.login.LoginResponse;
+import com.englishprep.api.identity.api.refresh.RefreshRequest;
 import com.englishprep.api.identity.api.register.RegisterRequest;
 import com.englishprep.api.identity.api.register.RegisterResponse;
 import com.englishprep.api.identity.application.login.IssueSessionUseCase;
 import com.englishprep.api.identity.application.login.LoginCommand;
 import com.englishprep.api.identity.application.login.LoginWithPasswordUseCase;
+import com.englishprep.api.identity.application.refresh.RefreshSessionUseCase;
 import com.englishprep.api.identity.application.register.RegisterMemberCommand;
 import com.englishprep.api.identity.application.register.RegisterMemberUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,12 +31,14 @@ class AuthController {
     private final RegisterMemberUseCase registerMember;
     private final LoginWithPasswordUseCase loginWithPassword;
     private final IssueSessionUseCase issueSession;
+    private final RefreshSessionUseCase refreshSession;
 
     AuthController(RegisterMemberUseCase registerMember, LoginWithPasswordUseCase loginWithPassword,
-                   IssueSessionUseCase issueSession) {
+                   IssueSessionUseCase issueSession, RefreshSessionUseCase refreshSession) {
         this.registerMember = registerMember;
         this.loginWithPassword = loginWithPassword;
         this.issueSession = issueSession;
+        this.refreshSession = refreshSession;
     }
 
     @PostMapping("/register")
@@ -55,6 +59,16 @@ class AuthController {
         var member = loginWithPassword.login(new LoginCommand(request.login(), request.password()));
         var result = issueSession.issue(member);
         // The body holds secrets, so no cache (browser, proxy) may keep it.
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(LoginResponse.from(result));
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh the session",
+            description = "Exchanges a refresh token for a new access token and a new refresh token. The old "
+                    + "refresh token stops working. No access token is needed, since it has usually expired. "
+                    + "Sending a refresh token that was already used logs the member out everywhere.")
+    ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        var result = refreshSession.refresh(request.refreshToken());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(LoginResponse.from(result));
     }
 }
