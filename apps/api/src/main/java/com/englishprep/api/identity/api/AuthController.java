@@ -15,6 +15,7 @@ import com.englishprep.api.identity.application.register.RegisterMemberCommand;
 import com.englishprep.api.identity.application.register.RegisterMemberUseCase;
 import com.englishprep.api.shared.security.AuthenticatedMember;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;
@@ -49,6 +50,7 @@ class AuthController {
     }
 
     @PostMapping("/register")
+    @SecurityRequirements // public: no token needed
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create an account",
             description = "Creates a member account. It does not log the member in; use the login endpoint for that.")
@@ -59,6 +61,7 @@ class AuthController {
     }
 
     @PostMapping("/login")
+    @SecurityRequirements // public: no token needed
     @Operation(summary = "Log in",
             description = "Log in with a user name or email and a password. Returns an access token (short-lived, "
                     + "sent as a Bearer token) and a refresh token (long-lived, shown only this once).")
@@ -70,6 +73,7 @@ class AuthController {
     }
 
     @PostMapping("/refresh")
+    @SecurityRequirements // public: no token needed
     @Operation(summary = "Refresh the session",
             description = "Exchanges a refresh token for a new access token and a new refresh token. The old "
                     + "refresh token stops working. No access token is needed, since it has usually expired. "

@@ -50,8 +50,10 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 // Without this, an anonymous call to a protected path would answer 403 instead of 401.
                 // The 401 body is built by ApiExceptionHandler, like every other error.
+                // A logged-in caller who is refused (403) gets the same treatment.
                 .exceptionHandling(errors -> errors
-                        .authenticationEntryPoint(new RestAuthenticationEntryPoint(exceptionResolver)));
+                        .authenticationEntryPoint(new RestAuthenticationEntryPoint(exceptionResolver))
+                        .accessDeniedHandler(new RestAccessDeniedHandler(exceptionResolver)));
         return http.build();
     }
 }
