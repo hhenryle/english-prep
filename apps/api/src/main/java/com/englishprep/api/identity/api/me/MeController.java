@@ -1,6 +1,7 @@
 package com.englishprep.api.identity.api.me;
 
 import com.englishprep.api.identity.api.login.LoginResponse;
+import com.englishprep.api.identity.application.me.ChangeTimeZoneUseCase;
 import com.englishprep.api.identity.application.me.GetCurrentMemberUseCase;
 import com.englishprep.api.identity.application.password.ChangePasswordUseCase;
 import com.englishprep.api.shared.security.AuthenticatedMember;
@@ -23,10 +24,13 @@ class MeController {
 
     private final GetCurrentMemberUseCase getCurrentMember;
     private final ChangePasswordUseCase changePassword;
+    private final ChangeTimeZoneUseCase changeTimeZone;
 
-    MeController(GetCurrentMemberUseCase getCurrentMember, ChangePasswordUseCase changePassword) {
+    MeController(GetCurrentMemberUseCase getCurrentMember, ChangePasswordUseCase changePassword,
+            ChangeTimeZoneUseCase changeTimeZone) {
         this.getCurrentMember = getCurrentMember;
         this.changePassword = changePassword;
+        this.changeTimeZone = changeTimeZone;
     }
 
     /**
@@ -51,5 +55,15 @@ class MeController {
             @Valid @RequestBody ChangePasswordRequest request) {
         var result = changePassword.change(member.id(), request.currentPassword(), request.newPassword());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(LoginResponse.from(result));
+    }
+
+    @PutMapping("/time-zone")
+    @Operation(summary = "Change time zone",
+            description = "Sets the IANA time zone of the caller, for example Asia/Ho_Chi_Minh. Sessions stay "
+                    + "valid. Returns the updated account.")
+    ResponseEntity<MeResponse> changeTimeZone(@AuthenticationPrincipal AuthenticatedMember member,
+            @Valid @RequestBody ChangeTimeZoneRequest request) {
+        var updated = changeTimeZone.change(member.id(), request.timeZone());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(MeResponse.from(updated));
     }
 }

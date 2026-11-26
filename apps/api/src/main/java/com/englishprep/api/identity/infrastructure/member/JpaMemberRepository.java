@@ -27,7 +27,8 @@ public class JpaMemberRepository implements MemberRepository {
             entity.update(member.firstName(), member.lastName(), member.userName(), member.email(),
                     member.passwordHash(), member.timeZone());
         }
-        return toDomain(jpa.save(entity));
+        // Flush now (not at commit) so the audit columns are filled while the caller is still known.
+        return toDomain(jpa.saveAndFlush(entity));
     }
 
     @Override

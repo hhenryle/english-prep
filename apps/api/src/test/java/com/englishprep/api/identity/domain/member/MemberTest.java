@@ -74,4 +74,25 @@ class MemberTest {
         assertThatThrownBy(() -> newMember().withPasswordHash(" "))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("passwordHash");
     }
+
+    @Test
+    void withTimeZoneChangesOnlyTheTimeZone() {
+        Member original = new Member(5L, "Alice", "Nguyen", "alice01", "alice@example.com", "hash", "UTC",
+                java.time.Instant.EPOCH, java.time.Instant.EPOCH);
+
+        Member changed = original.withTimeZone("Asia/Ho_Chi_Minh");
+
+        assertThat(changed.timeZone()).isEqualTo("Asia/Ho_Chi_Minh");
+        assertThat(changed.id()).isEqualTo(5L);
+        assertThat(changed.passwordHash()).isEqualTo("hash");
+        assertThat(original.timeZone()).isEqualTo("UTC");
+    }
+
+    @Test
+    void withTimeZoneRejectsAnInvalidZone() {
+        assertThatThrownBy(() -> newMember().withTimeZone("Mars/Olympus"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("timeZone");
+        assertThatThrownBy(() -> newMember().withTimeZone(null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("timeZone");
+    }
 }
